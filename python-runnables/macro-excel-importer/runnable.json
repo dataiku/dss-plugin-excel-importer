@@ -1,6 +1,6 @@
 {
     "meta": {
-        "label": "Excel xlsx sheets importer",
+        "label": "Excel .xlsx sheets importer",
         "description": "Create one dataset per excel sheet",
         "icon": "icon-table"
     },
@@ -20,7 +20,7 @@
        {
           "name": "overwrite",
           "type": "BOOLEAN",
-          "label": "Overwrite if exist",
+          "label": "Overwrite",
           "default": false
        }
     ],
