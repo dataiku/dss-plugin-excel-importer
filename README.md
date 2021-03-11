@@ -1,4 +1,11 @@
-# Excel sheet importer
-Use a macro to import multi-sheet excel files to as many datasets.
+# Excel Sheet Importer Plugin
 
-Find the documentation and usage recommendation on [our website](https://www.dataiku.com/product/plugins/excel-sheet-importer/).
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/dataiku/dss-plugin-excel-sheet-importer) ![Build status](https://img.shields.io/badge/build-passing-brightgreen) ![Support level](https://img.shields.io/badge/support-Unsupported-orange)
+
+This Dataiku DSS plugin provides a macro to import multi-sheet Excel files as multiple datasets (one for each sheet).
+
+Documentation: https://www.dataiku.com/product/plugins/excel-sheet-importer/
+
+## License
+
+This plugin is distributed under the [Apache License version 2.0](LICENSE).
