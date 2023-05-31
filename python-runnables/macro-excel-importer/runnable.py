@@ -1,9 +1,10 @@
 import dataiku
 import pandas as pd
-import os
 import openpyxl
 import time
 from dataiku.runnables import Runnable, ResultTable
+from io import BytesIO
+
 
 class MyRunnable(Runnable):
     def __init__(self, project_key, config, plugin_config):
@@ -15,7 +16,7 @@ class MyRunnable(Runnable):
         self.project_key = project_key
         self.config = config
         self.plugin_config = plugin_config
-        
+
     def get_progress_target(self):
         return (100, 'FILES')
 
@@ -37,42 +38,43 @@ class MyRunnable(Runnable):
         overwrite = self.config.get("overwrite", False)
 
         folder = dataiku.Folder(folder_id, project_key=self.project_key)
-        folder_path = folder.get_path()
+        folder_paths = folder.list_paths_in_partition()
 
-        macro_creates_dataset = False # A boolean used to provide an informative message to the user when the macro creates a dataset
-        # List files in folder and get path
-        files_list = os.listdir(folder_path)
+        macro_creates_dataset = False  # A boolean used to provide an informative message to the user when the macro creates a dataset
 
         # List the datasets in the project
         datasets_in_project = []
-        for i in range(len(project.list_datasets())):
-            datasets_in_project.append(project.list_datasets()[i]['name'])
-        
+        for dataset in project.list_datasets():
+            datasets_in_project.append(dataset.get('name'))
+
         # Actions performed
         actions_performed = dict()
-        num_files = len(files_list)
+        num_files = len(folder_paths)
 
         update_time = time.time()
-        for file_index, my_file in enumerate(files_list):
-            
-            ## Get file path
-            file_path = os.path.join(folder_path, my_file)
-            
-            ## Get Excel file and load in a pandas dataframe
-            sheets_names = pd.ExcelFile(file_path).sheet_names
+        for file_index, file_path in enumerate(folder_paths):
+            file_name = file_path.strip('/')
+
+            # Get Excel file and load in a pandas dataframe
+            sheets_names = []
+            with folder.get_download_stream(file_path) as file_handle:
+                sheets_names = pd.ExcelFile(file_handle).sheet_names
+
             for sheet in sheets_names:
-                ### Rename sheets by "file_sheet"
-                ss=openpyxl.load_workbook(file_path)
+                # Rename sheets by "file_sheet"
+                with folder.get_download_stream(file_path) as file_handle:
+                    ss = openpyxl.load_workbook(BytesIO(file_handle.read()))
                 ss_sheet = ss.get_sheet_by_name(sheet)
                 title = ss_sheet.title
-                
-                if not my_file.split(".")[0] in title:
-                    title = '_'.join((my_file.split(".")[0] + "_" + sheet).split())
-                
+
+                if not file_name.split(".")[0] in title:
+                    title = '_'.join((file_name.split(".")[0] + "_" + sheet).split())
+
                 title = '_'.join(title.split())
-                title = title.replace(')','')
-                title = title.replace('(','')
-                
+                title = title.replace(')', '')
+                title = title.replace('(', '')
+                title = title.replace('/', '_')
+
                 create_dataset = True
                 if title in datasets_in_project:
                     if overwrite:
@@ -85,16 +87,23 @@ class MyRunnable(Runnable):
                     actions_performed[title] = "created"
                     macro_creates_dataset = True
                 if create_dataset:
-                    dataset = project.create_dataset(title
-                                    ,'FilesInFolder'
-                                    , params={'folderSmartId': folder_id,
-                                              'filesSelectionRules': {'mode': 'EXPLICIT_SELECT_FILES', 
-                                                                     'explicitFiles': [my_file]}}
-                                    , formatType='excel'
-                                    , formatParams={"xlsx":True, "sheets":"*"+ss_sheet.title,'parseHeaderRow': True})
-                    
-                    df = pd.read_excel(file_path, sheet_name=ss_sheet.title, nrows=1000)
-                    dataset.set_schema({'columns': [{'name': column, 'type': 'string'} for column, column_type in df.dtypes.items()]})
+                    dataset = project.create_dataset(
+                        title,
+                        'FilesInFolder',
+                        params={
+                            'folderSmartId': folder_id,
+                            'filesSelectionRules': {
+                                'mode': 'EXPLICIT_SELECT_FILES',
+                                'explicitFiles': [file_name]
+                            }
+                        },
+                        formatType='excel',
+                        formatParams={"xlsx": True, "sheets": "*" + ss_sheet.title, 'parseHeaderRow': True}
+                    )
+
+                    with folder.get_download_stream(file_path) as file_handle:
+                        df = pd.read_excel(BytesIO(file_handle.read()), sheet_name=ss_sheet.title, nrows=1000)
+                        dataset.set_schema({'columns': [{'name': column, 'type': 'string'} for column, column_type in df.dtypes.items()]})
 
                 percent = 100*float(file_index+1)/num_files
                 update_time = update_percent(percent, update_time)
@@ -108,7 +117,7 @@ class MyRunnable(Runnable):
             record = []
             record.append(list(actions_performed.keys())[i] + " has been " + list(actions_performed.values())[i])
             rt.add_record(record)
-        
+
         if macro_creates_dataset:
             rt.add_record(["Please refresh this page to see new datasets."])
 
