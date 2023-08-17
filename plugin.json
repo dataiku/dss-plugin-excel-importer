@@ -1,6 +1,6 @@
 {
     "id": "excel-sheet-importer",
-    "version": "1.1.1",
+    "version": "1.2.0",
     "meta": {
         "label": "Excel sheet importer",
         "description": "Create one dataset per sheet from an Excel file stored in a folder.",

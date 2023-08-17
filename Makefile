@@ -1,5 +1,5 @@
 
-PLUGIN_VERSION=1.1.1
+PLUGIN_VERSION=1.2.0
 PLUGIN_ID=excel-sheet-importer
 
 all:
