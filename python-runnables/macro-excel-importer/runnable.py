@@ -66,6 +66,7 @@ class MyRunnable(Runnable):
                 if not file_name.split(".")[0] in title:
                     title = file_name.split(".")[0] + "_" + sheet
 
+                # Convert whitespace to underscores, remove unacceptable characters
                 title = '_'.join(title.split())
                 title = title.replace(')', '')
                 title = title.replace('(', '')
