@@ -55,20 +55,16 @@ class MyRunnable(Runnable):
         for file_index, file_path in enumerate(folder_paths):
             file_name = file_path.strip('/')
 
-            # Get Excel file and load in a pandas dataframe
-            sheets_names = []
             with folder.get_download_stream(file_path) as file_handle:
-                sheets_names = pd.ExcelFile(file_handle).sheet_names
+                ss = openpyxl.load_workbook(BytesIO(file_handle.read()))
 
-            for sheet in sheets_names:
-                # Rename sheets by "file_sheet"
-                with folder.get_download_stream(file_path) as file_handle:
-                    ss = openpyxl.load_workbook(BytesIO(file_handle.read()))
-                ss_sheet = ss.get_sheet_by_name(sheet)
+            for sheet in ss.sheetnames:
+                ss_sheet = ss[sheet]
                 title = ss_sheet.title
 
+                # Ensure the file name is in the title for the dataset (prepend if missing)
                 if not file_name.split(".")[0] in title:
-                    title = '_'.join((file_name.split(".")[0] + "_" + sheet).split())
+                    title = file_name.split(".")[0] + "_" + sheet
 
                 title = '_'.join(title.split())
                 title = title.replace(')', '')
