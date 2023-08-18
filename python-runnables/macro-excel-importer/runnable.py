@@ -55,14 +55,12 @@ class MyRunnable(Runnable):
         for file_index, file_path in enumerate(folder_paths):
             file_name = file_path.strip('/')
 
-            split_file_name = file_name.split(".")
-
-            # skip non xslx files
-            if not (len(split_file_name) > 1 and 'xlsx' == split_file_name[-1]):
-                continue
-
             with folder.get_download_stream(file_path) as file_handle:
-                ss = openpyxl.load_workbook(BytesIO(file_handle.read()))
+                try:
+                    ss = openpyxl.load_workbook(BytesIO(file_handle.read()))
+                except Exception:
+                    actions_performed[file_name] = "skipped (not an xlsx file)"
+                    continue
 
             for sheet in ss.sheetnames:
                 ss_sheet = ss[sheet]
