@@ -4,6 +4,7 @@ import openpyxl
 import time
 from dataiku.runnables import Runnable, ResultTable
 from io import BytesIO
+import re
 
 
 class MyRunnable(Runnable):
@@ -70,12 +71,10 @@ class MyRunnable(Runnable):
                 if not file_name.split(".")[0] in title:
                     title = file_name.split(".")[0] + "_" + sheet
 
-                # Convert whitespace to underscores, remove unacceptable characters
-                title = '_'.join(title.split())
-                title = title.replace(')', '')
-                title = title.replace('(', '')
-                title = title.replace('/', '_')
-                title = title.replace('.', '_')
+                # Replace all characters that are not allowed in a dataset name by _
+                # Allowed characters are a-z A-Z 0-9 - _
+                title = title.encode('ascii', errors='replace').decode('ascii') # replace all non ascii characters with a questionmark (which will become a _)
+                title = re.sub(r"[^\w\-_]", "_", title)
 
                 create_dataset = True
                 if title in datasets_in_project:
