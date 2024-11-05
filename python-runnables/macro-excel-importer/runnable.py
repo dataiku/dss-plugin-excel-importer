@@ -75,6 +75,7 @@ class MyRunnable(Runnable):
                 title = title.replace(')', '')
                 title = title.replace('(', '')
                 title = title.replace('/', '_')
+                title = title.replace('.', '_')
 
                 create_dataset = True
                 if title in datasets_in_project:
