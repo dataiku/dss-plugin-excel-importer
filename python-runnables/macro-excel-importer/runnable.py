@@ -79,11 +79,11 @@ class MyRunnable(Runnable):
 
                 create_dataset = True
                 if title in datasets_in_project:
+                    create_dataset = False
                     if overwrite:
-                        project.get_dataset(title).delete()
+                        project.get_dataset(title).clear()
                         actions_performed[title] = "replaced"
                     else:
-                        create_dataset = False
                         actions_performed[title] = "skipped (already exists)"
                 else:
                     actions_performed[title] = "created"
